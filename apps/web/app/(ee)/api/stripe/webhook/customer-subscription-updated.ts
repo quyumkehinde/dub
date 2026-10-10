@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { stripe } from "@/lib/stripe";
 import { TRIAL_LIMITS } from "@dub/utils";
 import { differenceInHours } from "date-fns";
 import Stripe from "stripe";
@@ -8,7 +9,10 @@ import { updateWorkspacePlan } from "./utils/update-workspace-plan";
 export async function customerSubscriptionUpdated(
   event: Stripe.CustomerSubscriptionUpdatedEvent,
 ) {
-  const updatedSubscription = event.data.object;
+  // fetch the latest subscription since Stripe doesn't guarantee webhook event order
+  const updatedSubscription = await stripe.subscriptions.retrieve(
+    event.data.object.id,
+  );
   const priceId = updatedSubscription.items.data[0].price.id;
 
   if (
